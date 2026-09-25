@@ -74,8 +74,25 @@ app.use('/api/certificates', certificateRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
 app.use('/api/admin', adminRoutes);
 
-// 404 Route Handler
-app.use((req, res) => {
+// Serve Frontend Static Files (Production/Single-Port mode)
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const frontendDist = path.resolve(__dirname, '../../frontend/dist');
+
+app.use(express.static(frontendDist));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(frontendDist, 'index.html'), (err) => {
+    if (err) next();
+  });
+});
+
+// 404 Route Handler for unmatched API routes
+app.use('/api/*', (req, res) => {
   res.status(404).json({ success: false, error: `Route not found: ${req.method} ${req.url}` });
 });
 
